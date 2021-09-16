@@ -1,0 +1,58 @@
+version: "3"
+networks:
+    inception_net:
+services:
+    wordpress:
+        networks:
+            - inception_net
+        env_file:
+            - .env
+        build:
+            context: requirements/wordpress
+        ports:
+            - 9000:9000
+        volumes:
+            - wordpress_vol:/var/www/html
+        restart: unless-stopped
+    nginx:
+        networks:
+            - inception_net
+        build:
+            context: requirements/nginx
+        env_file:
+            - .env
+        ports: 
+            - 443:443
+        volumes:
+            - wordpress_vol:/var/www/html
+        restart: unless-stopped
+    mariadb:
+        image: mariadb
+        build:
+            context: ./requirements/mariadb
+            args:
+              - WP_DB_NAME=${WP_DB_NAME}
+              - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+              - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+              - MYSQL_USER=${MYSQL_USER}
+        container_name: mariadb
+        ports:
+            - 3306:3306
+        volumes:
+            - mariadb_vol:/var/lib/mysql/
+        networks:
+            - inception_net
+        restart: unless-stopped
+volumes:
+    wordpress_vol:
+        driver: local
+        driver_opts:
+            type: 'none'
+            o: 'bind'
+            device: '/home/milmi/data/wp'
+    mariadb_vol:
+        driver: local
+        driver_opts:
+            type: 'none'
+            o: 'bind'
+            device: '/home/milmi/data/mariadb'
